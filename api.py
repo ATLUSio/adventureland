@@ -821,7 +821,7 @@ def is_first_api(**args):
 def broadcast_api(**args):
 	self,domain,server,event,data=gdmuld(args,"self","domain","server","event","data")
 	if not server: jhtml(self,{"failed":1,"reason":"noserver"}); return
-	servers_eval("broadcast(data.event,JSON.parse(data.data))",{"event":event,"data":data})
+	servers_eval("broadcast(data.event,JSON.parse(data.data)),{"event":event,"data":data})
 	jhtml(self,{"done":1})
 
 def ban_user_api(**args):
@@ -987,6 +987,8 @@ def pull_mail_api(**args):
 		if mail.item:
 			mail_data["item"]=simplify_item(mail.info.item)
 			mail_data["taken"]=mail.taken
+			if hasattr(mail.info, "cod"):
+				mail_data["cod"] = mail.info.cod
 		data["mail"].append(mail_data)
 	if new_cursor: data["cursor"]=py3_safe_string(new_cursor.urlsafe())
 	if new_more: data["more"]=True
@@ -1002,6 +1004,10 @@ def take_item_from_mail_api(**args):
 	def retrieve_item_transaction():
 		m=get_by_iid(mail.k('i'))
 		if not m.item or m.taken: return False
+		print(mail)
+		print(m)
+		print(user)
+		print(user.info.gold)
 		m.taken=True
 		m.put()
 		return m.info.item
@@ -1020,6 +1026,8 @@ def delete_mail_api(**args):
 
 def send_mail_api(**args):
 	self,domain,fro,to,server,subject,message,rid,item,type=gdmuld(args,"self","domain","fro","to","server","subject","message","rid","item","type")
+	cod = args.get("cod", 0)
+	print("Cod: ", cod)
 	if fro: frop=get_character(fro);
 	top=get_character(to)
 	if fro and not frop or not top: return jhtml(self,{"failed":1,"reason":"nocharacter","return":True})
@@ -1047,6 +1055,8 @@ def send_mail_api(**args):
 		if item:
 			mail.item=True
 			mail.info.item=item
+			if cod:
+				mail.info.cod = cod
 			mail.taken=False
 		mail.put()
 		return mail

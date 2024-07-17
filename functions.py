@@ -671,7 +671,7 @@ def character_to_info(character,user=None,ip=None,guild=None):
 		"q":gf(character,"q",{}),
 		#"trades":gf(character,"trades",0),
 		"rip":gf(character,"rip",0),
-		"p":gf(character,"p",{"dt":{}}) or {"dt":{}}, #or is to fix the temporary, pre-server update glitch [12/09/16]
+		"p":gf(character,"p,{"dt":{}}) or {"dt":{}}, #or is to fix the temporary, pre-server update glitch [12/09/16]
 		}
 	if guild:
 		info["guild"]=guild_to_info(guild)
@@ -725,7 +725,7 @@ def update_characters(user,reason=None,name=None,shells=0):
 					try: ndb.transaction(set_friends,xg=True,retries=0)
 					except: log_trace_i()
 					fetch_url("http://%s:%s"%(ip,server.port),aevent="lost_friend",spass=secrets.ACCESS_MASTER,name=name,friends=user.friends,id=character.info.name)
-					#character_emit(character,"friend",{"event":"update","friends":user.friends})
+					#character_emit(character,"friend,{"event":"update","friends":user.friends})
 			except: log_trace()
 
 def send_system_mail(user,subject,message,type=None,info=None):

@@ -4954,9 +4954,25 @@ function render_mail(id)
 		html+="<div class='mailsubject'>"+html_escape(mail.message).replace_all("\r\n","<br />").replace_all("\n","<br />").replace_all("\t","&nbsp;&nbsp;")+"</div>";
 		if(mail.item)
 		{
+			console.log(mail)
 			var item=JSON.parse(mail.item);
 			var take="";
-			if(!mail.taken) take=" <span class='clickable takeitem' style='color: #6DAD47' onclick='parent.socket.emit(\"mail_take_item\",{id:\""+id+"\"})'> TAKE </span>";
+			if(!mail.taken) {
+				if (mail.cod) {
+					take=`
+						<span>
+							<span class='clickable takeitem' style='color: gray' onclick='parent.socket.emit(\"mail_take_item\",{id:\"${id}\"})'>
+								Pay: <span style='color: gold'>${mail.cod.toLocaleString()}</span> gold to take 
+							</span>
+							<span style='margin-left: 12px; margin-right: 12px;'> or </span>
+							<span class='clickable' style='color: #DB090A;' onclick='parent.socket.emit(\"mail_reject_item\",{id:\"${id}\"})'>
+								Reject Offer
+							</span>
+						</span>`;
+				} else {
+					take=" <span class='clickable takeitem' style='color: #6DAD47' onclick='parent.socket.emit(\"mail_take_item\",{id:\""+id+"\"})'> TAKE </span>";
+				}
+			}
 			html+="<div class='mailsubject'><span style='color: gray'>Item:</span> "+item_container({skin:G.items[item.name].skin,def:G.items[item.name],draggable:false},item)+take+"</div>";
 		}
 	html+="</div>";

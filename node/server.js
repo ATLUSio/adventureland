@@ -4807,6 +4807,35 @@ function init_io() {
 				},
 			);
 		});
+		socket.on("mail_reject_item", function (data) {
+			var player = players[socket.id];
+			if (!player) {
+				return;
+			}
+			if (mode.prevent_external) {
+				return socket.emit("game_response", { response: "not_in_this_server" });
+			}
+			if (!player.esize) {
+				return socket.emit("game_response", "inv_size");
+			}
+			appengine_call(
+				"take_item_from_mail",
+				{ owner: player.owner, mid: data.id },
+				function (result) {
+					var player = players[socket.id];
+					if (result.failed) {
+						return socket.emit("game_response", { response: "mail_item_already_taken" });
+					}
+					var item = JSON.parse(result.item);
+					add_item(player, item, { announce: false });
+					resend(player, "reopen");
+					socket.emit("game_response", { response: "mail_item_taken" });
+				},
+				function () {
+					socket.emit("game_response", { response: "mail_take_item_failed" });
+				},
+			);
+		});
 		socket.on("mail", function (data) {
 			var player = players[socket.id];
 			if (!player) {
@@ -4846,6 +4875,7 @@ function init_io() {
 					rid: randomStr(50),
 					retries: retries,
 					item: item,
+					cod: data.cod ?? 0
 				},
 				function (result) {
 					var player = players[socket.id];
@@ -6205,7 +6235,7 @@ function init_io() {
 						item.grace = (item.grace || 0) + 1;
 					}
 
-					if (data.item_num == player.p.item_num && Math.random() < 0.6) {
+					if (Math.random() < 0.6) {
 						// Added [29/10/17]
 						server_log("16 cheat");
 						result = max(Math.random() / 10000.0, result * 0.975 - 0.012);
@@ -10407,7 +10437,7 @@ function init_io() {
 					return socket.emit("game_response", "tavern_dice_exist");
 				}
 				// if(Object.keys(player.bets).length>=5) return socket.emit("game_response","tavern_too_many_bets");
-				// socket.emit("game_log",{"message":"Bet accepted on "+num.toFixed(2)+" "+dir.toUpperCase(),"color":"white"});
+				// socket.emit("game_log,{"message":"Bet accepted on "+num.toFixed(2)+" "+dir.toUpperCase(),"color":"white"});
 				socket.emit("game_log", { message: "Num: " + num.toFixed(2) + " " + dir.toUpperCase(), color: "white" });
 				socket.emit("game_log", { message: "Bet: " + to_pretty_num(gold) + " gold", color: "gray" });
 
@@ -12225,43 +12255,43 @@ function update_instance(instance) {
 				} // #TODO: don't need to resend actually, maybe reconsider [27/06/18]
 			}
 		}
-		for (var name in player.q) {
-			var value = player.q[name].ms;
-			var ref = player.q[name];
-			player.q[name].ms -= ms;
-			if (name == "upgrade") {
-				if (player.items[ref.num] && player.items[ref.num].name == "placeholder") {
-					var def = player.items[ref.num].p;
-					var change = false;
-					if (value < ref.len * 0.8 && def.nums[0] === undefined) {
-						def.nums[0] = parseInt(player.p.u_roll * 10000) % 10;
-						change = true;
-					}
-					if (value < ref.len * 0.64 && def.nums[1] === undefined) {
-						def.nums[1] = parseInt(player.p.u_roll * 1000) % 10;
-						change = true;
-					}
-					if (value < ref.len * 0.4 && def.nums[2] === undefined) {
-						def.nums[2] = parseInt(player.p.u_roll * 100) % 10;
-						change = true;
-					}
-					if (value < min(3000, ref.len * 0.3) && def.nums[3] === undefined) {
-						def.nums[3] = parseInt(player.p.u_roll * 10);
-						change = true;
-					}
-					if (value < min(2200, ref.len * 0.22) && player.p.u_item && !player.p.u_fail && !def.success) {
-						def.success = true;
-						change = true;
-					}
-					if (value < min(2200, ref.len * 0.22) && (player.p.u_itemx || player.p.u_fail) && !def.failure) {
-						def.failure = true;
-						change = true;
-					}
-					if (change) {
-						player.socket.emit("q_data", { q: player.q, num: ref.num, p: def });
-					}
-				}
+for (var name in player.q) {
+	var value = player.q[name].ms;
+	var ref = player.q[name];
+	player.q[name].ms -= ms;
+	if (name == "upgrade") {
+		if (player.items[ref.num] && player.items[ref.num].name == "placeholder") {
+			var def = player.items[ref.num].p;
+			var change = false;
+			if (value < ref.len * 0.8 && def.nums[0] === undefined) {
+				def.nums[0] = parseInt(player.p.u_roll * 10000) % 10;
+				change = true;
 			}
+			if (value < ref.len * 0.64 && def.nums[1] === undefined) {
+				def.nums[1] = parseInt(player.p.u_roll * 1000) % 10;
+				change = true;
+			}
+			if (value < ref.len * 0.4 && def.nums[2] === undefined) {
+				def.nums[2] = parseInt(player.p.u_roll * 100) % 10;
+				change = true;
+			}
+			if (value < min(3000, ref.len * 0.3) && def.nums[3] === undefined) {
+				def.nums[3] = parseInt(player.p.u_roll * 10);
+				change = true;
+			}
+			if (value < min(2200, ref.len * 0.22) && player.p.u_item && !player.p.u_fail && !def.success) {
+				def.success = true;
+				change = true;
+			}
+			if (value < min(2200, ref.len * 0.22) && (player.p.u_itemx || player.p.u_fail) && !def.failure) {
+				def.failure = true;
+				change = true;
+			}
+			if (change) {
+				player.socket.emit("q_data", { q: player.q, num: ref.num, p: def });
+			}
+		}
+	}
 			if (name == "compound") {
 				if (player.items[ref.num] && player.items[ref.num].name == "placeholder") {
 					var def = player.items[ref.num].p;

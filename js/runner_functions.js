@@ -978,11 +978,11 @@ function send_cx(receiver,cx)
 	return parent.push_deferred("send");
 }
 
-function send_mail(to,subject,message,item)
+function send_mail(to,subject,message,item,cod=0)
 {
 	// returns {success:false,in_progress:true}
 	item=item&&true||false; // 0th slot is sent
-	parent.socket.emit('mail',{to:to,subject:subject,message:message,item:item});
+	parent.socket.emit('mail',{to:to,subject:subject,message:message,item:item,cod:cod});
 	return parent.push_deferred("mail");
 }
 
